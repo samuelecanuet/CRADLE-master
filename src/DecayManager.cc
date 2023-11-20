@@ -5,6 +5,10 @@
 #include "CRADLE/DecayMode.hh"
 #include "CRADLE/SpectrumGenerator.hh"
 
+// #include "../test.hh"
+#include "TFile.h"
+#include "TTree.h"
+
 #include <boost/progress.hpp>
 #include <fstream>
 #include <sstream>
@@ -458,7 +462,69 @@ namespace CRADLE
   //   return eventData.str();
   // }
 
-  std::string DecayManager::GenerateEvent(int eventNr)
+  std::vector<ParticleData> DecayManager::GenerateEvent_ROOT(int eventNr)
+  {
+    std::vector<ParticleData> vec;
+    ParticleData ParticleData_ini;
+    ParticleData_ini.event = 0;
+    ParticleData_ini.time = 0;
+    ParticleData_ini.code = 0;
+    ParticleData_ini.excitation_energy = 0;
+    ParticleData_ini.kinetic_energy = 0;
+    ParticleData_ini.px = 0;
+    double time = 0.;
+    double checkTime = 0.;
+    int totEvents = 0;
+    std::vector<Particle *> particleStack;
+    Particle *ini = GetNewParticle(initStateName);
+    ini->SetExcitationEnergy(initExcitationEn);
+    particleStack.push_back(ini);
+    while (!particleStack.empty())
+    {
+      Particle *p = particleStack.back();
+      vector<Particle *> finalStates;
+      double decayTime = p->GetDecayTime();
+      // cout << "\n Decaying particle " << p->GetName() << endl;
+      // std::cout << eventNr << "\t" << subEventNr << std::endl;
+      // std::cout << "     Time =\t" << time    if (particleDefinition) {
+      //           << "CheckTime =\t" << checkTime << "\n "
+      //           << "decayTime =\t" << decayTime << std::endl;
+      
+      vec.push_back(ParticleData_ini);
+      vec[totEvents].event = eventNr;
+      vec[totEvents].code = screening::NametoPDG(p->GetRawName());
+      vec[totEvents].time = roundf(time * 10000) / 10000.;
+      vec[totEvents].excitation_energy = p->GetExcitationEnergy();
+      vec[totEvents].kinetic_energy = p->GetKinEnergy();
+      vec[totEvents].p = p->GetMomentum()(0);
+      vec[totEvents].px = p->GetMomentum()(1);
+      vec[totEvents].py = p->GetMomentum()(2);
+      vec[totEvents].pz = p->GetMomentum()(3);
+      ++totEvents;
+      if ((time + decayTime) <= configOptions.cuts.Lifetime)
+      {
+        try
+        {
+          time += decayTime;
+          finalStates = p->Decay();
+        }
+        catch (const std::invalid_argument &e)
+        {
+          std::cerr << "Decay Mode for particle " << p->GetName() << " not found. Aborting." << endl;
+        }
+      }
+      delete particleStack.back();
+      particleStack.pop_back();
+      if (!finalStates.empty())
+      {
+        particleStack.insert(particleStack.end(), finalStates.begin(),
+                             finalStates.end());
+      }
+    }
+    return vec;
+  }
+
+  std::string DecayManager::GenerateEvent_TXT(int eventNr)
   {
     double time = 0.;
     double checkTime = 0.;
@@ -477,12 +543,12 @@ namespace CRADLE
       Particle *p = particleStack.back();
       vector<Particle *> finalStates;
       double decayTime = p->GetDecayTime();
-      //cout << "\n Decaying particle " << p->GetName() << endl;
-      //std::cout << eventNr << "\t" << subEventNr << std::endl;
-      //std::cout << "     Time =\t" << time      << "\n "
-                // << "CheckTime =\t" << checkTime << "\n "
-                // << "decayTime =\t" << decayTime << std::endl;
-      
+      // cout << "\n Decaying particle " << p->GetName() << endl;
+      // std::cout << eventNr << "\t" << subEventNr << std::endl;
+      // std::cout << "     Time =\t" << time      << "\n "
+      //  << "CheckTime =\t" << checkTime << "\n "
+      //  << "decayTime =\t" << decayTime << std::endl;
+
       subEventData << eventNr << "\t\t" << std::fixed << std::setprecision(4) << roundf(time * 10000) / 10000. << "\t" << p->GetInfoForFile() << "\n";
       ++totSubEvents;
       ++totEvents;
@@ -495,7 +561,7 @@ namespace CRADLE
           subHeader << eventNr << std::setw(8) << subEventNr << "\t\t" << totSubEvents << "\n"
                     << subEventData.str();
           subEventData.str(std::string());
-          totSubEvents=0;
+          totSubEvents = 0;
           ++subEventNr;
         }
         catch (const std::invalid_argument &e)
@@ -504,7 +570,6 @@ namespace CRADLE
           return "";
         }
       }
-      
 
       delete particleStack.back();
       particleStack.pop_back();
@@ -515,24 +580,24 @@ namespace CRADLE
       }
     }
     eventData << eventNr << "\t\t" << totEvents << "\n"
-             << subHeader.str();
+              << subHeader.str();
+
     return eventData.str();
   }
 
-
-  //old one
-  // std::string DecayManager::GenerateEvent(int eventNr) {
-  //   double time = 0.;
-  //   std::ostringstream eventDataSS;
-  //   std::vector<Particle*> particleStack;
-  //   Particle* ini = GetNewParticle(initStateName);
-  //   ini->SetExcitationEnergy(initExcitationEn);
-  //   particleStack.push_back(ini);
-  //   while (!particleStack.empty()) {
-  //     Particle* p = particleStack.back();
-  //     //cout << "Decaying particle " << p->GetName() << endl;
-  //     vector<Particle*> finalStates;
-  //     double decayTime = p->GetDecayTime();
+  // old one
+  //  std::string DecayManager::GenerateEvent(int eventNr) {
+  //    double time = 0.;
+  //    std::ostringstream eventDataSS;
+  //    std::vector<Particle*> particleStack;
+  //    Particle* ini = GetNewParticle(initStateName);
+  //    ini->SetExcitationEnergy(initExcitationEn);
+  //    particleStack.push_back(ini);
+  //    while (!particleStack.empty()) {
+  //      Particle* p = particleStack.back();
+  //      //cout << "Decaying particle " << p->GetName() << endl;
+  //      vector<Particle*> finalStates;
+  //      double decayTime = p->GetDecayTime();
 
   //     if ((time + decayTime) <= configOptions.cuts.Lifetime) {
 
@@ -567,32 +632,81 @@ namespace CRADLE
       return true;
     }
     cout << "Starting Main Loop (" << nrParticles << " events)" << endl;
-    std::ofstream fileStream;
-    fileStream.open(outputName.c_str());
 
     std::ios::sync_with_stdio(false);
     boost::progress_display show_progress(nrParticles);
     boost::progress_timer t;
-    // fileStream << GenerateEvent(0);                        ///// and i started to 0 before
-    for (int i = 0; i < nrParticles; i += NRTHREADS)
-    {
-      // cout << "LOOP NR " << i+1 << endl;
-      int threads = std::min(NRTHREADS, nrParticles - i);
-      std::future<std::string> f[threads];
-      for (int t = 0; t < threads; t++)
-      {
-        f[t] = std::async(std::launch::async, &DecayManager::GenerateEvent, this, i + t);
-      }
+    // fileStream << GenerateEvent(0);   ///// and i started to 0 before
 
-      for (int t = 0; t < threads; t++)
+    if (outputName.find("root") != std::string::npos)
+    {
+      TFile outputFile(outputName.c_str(), "RECREATE");
+      TTree tree("ParticleTree", "Tree for Particle Data");
+      ParticleData pData;
+      tree.Branch("event", &pData.event);
+      tree.Branch("time", &pData.time);
+      tree.Branch("code", &pData.code);
+      tree.Branch("energy", &pData.kinetic_energy);
+      tree.Branch("excitation_energy", &pData.excitation_energy);
+      tree.Branch("p", &pData.p);
+      tree.Branch("px", &pData.px);
+      tree.Branch("py", &pData.py);
+      tree.Branch("pz", &pData.pz);
+
+      for (int i = 0; i < nrParticles; i += NRTHREADS)
       {
-        fileStream << f[t].get();
-        ++show_progress;
+        // cout << "LOOP NR " << i+1 << endl;
+        int threads = std::min(NRTHREADS, nrParticles - i);
+        std::future<std::vector<ParticleData>> f[threads];
+        for (int t = 0; t < threads; t++)
+        {
+          f[t] = std::async(std::launch::async, &DecayManager::GenerateEvent_ROOT, this, i + t);
+        }
+
+        for (int t = 0; t < threads; t++)
+        {
+          for (const auto &particle : f[t].get())
+          {
+            pData = particle;
+            tree.Fill();
+          }
+          ++show_progress;
+        }
       }
+      outputFile.Write();
+      outputFile.Close();
     }
+
+    else if (outputName.find("txt") != std::string::npos)
+    {
+      std::ofstream fileStream;
+      fileStream.open(outputName.c_str());
+      for (int i = 0; i < nrParticles; i += NRTHREADS)
+      {
+        // cout << "LOOP NR " << i+1 << endl;
+        int threads = std::min(NRTHREADS, nrParticles - i);
+        std::future<std::string> f[threads];
+        for (int t = 0; t < threads; t++)
+        {
+          f[t] = std::async(std::launch::async, &DecayManager::GenerateEvent_TXT, this, i + t);
+        }
+
+        for (int t = 0; t < threads; t++)
+        {
+          fileStream << f[t].get();
+          ++show_progress;
+        }
+      }
+      fileStream.flush();
+      fileStream.close();
+    }
+    else
+    {
+      std::cerr << ("Choose .txt or .root for your output file") << std::endl;
+      return true;
+    }
+
     std::cout << "Done! Time taken: ";
-    fileStream.flush();
-    fileStream.close();
     return true;
   }
 
