@@ -22,8 +22,7 @@ class Particle {
     double currentExcitationEnergy;
 
     std::string name;
-    int code screening:
-
+    
     ublas::vector<double> fourMomentum;
     std::vector<DecayChannel*> decayChannels;
 

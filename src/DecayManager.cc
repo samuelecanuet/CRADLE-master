@@ -548,10 +548,9 @@ namespace CRADLE
       // std::cout << "     Time =\t" << time      << "\n "
       //  << "CheckTime =\t" << checkTime << "\n "
       //  << "decayTime =\t" << decayTime << std::endl;
-
-      subEventData << eventNr << "\t\t" << std::fixed << std::setprecision(4) << roundf(time * 10000) / 10000. << "\t" << p->GetInfoForFile() << "\n";
       ++totSubEvents;
-      ++totEvents;
+      subEventData << eventNr << "\t\t" << std::fixed << std::setprecision(4) << roundf(time * 10000) / 10000. << "\t" << p->GetInfoForFile() << "\n";
+      
       if ((time + decayTime) <= configOptions.cuts.Lifetime)
       {
         try
@@ -561,6 +560,7 @@ namespace CRADLE
           subHeader << eventNr << std::setw(8) << subEventNr << "\t\t" << totSubEvents << "\n"
                     << subEventData.str();
           subEventData.str(std::string());
+          totEvents += totSubEvents;
           totSubEvents = 0;
           ++subEventNr;
         }
