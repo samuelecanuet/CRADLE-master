@@ -284,7 +284,7 @@ namespace CRADLE
 
     std::ostringstream gammaFileSS;
     gammaFileSS << configOptions.envOptions.Gammadata;
-    gammaFileSS << "/z" << Z << ".a" << A;
+    gammaFileSS << "z" << Z << ".a" << A;
     std::ifstream gammaDataFile(gammaFileSS.str().c_str());
     if (gammaDataFile.is_open())
     {
@@ -490,17 +490,17 @@ namespace CRADLE
       //           << "CheckTime =\t" << checkTime << "\n "
       //           << "decayTime =\t" << decayTime << std::endl;
       
+      if ( p->GetRawName() == "p" || p->GetRawName() =="e+" || p->GetRawName() =="e-" || p->GetRawName() =="gamma" || p->GetRawName() =="alpha" || p->GetRawName() =="2He" || p->GetRawName() =="n"){
       vec.push_back(ParticleData_ini);
       vec[totEvents].event = eventNr;
       vec[totEvents].code = screening::NametoPDG(p->GetRawName());
       vec[totEvents].time = roundf(time * 10000) / 10000.;
       vec[totEvents].excitation_energy = p->GetExcitationEnergy();
       vec[totEvents].kinetic_energy = p->GetKinEnergy();
-      vec[totEvents].p = p->GetMomentum()(0);
-      vec[totEvents].px = p->GetMomentum()(1);
-      vec[totEvents].py = p->GetMomentum()(2);
-      vec[totEvents].pz = p->GetMomentum()(3);
-      ++totEvents;
+      vec[totEvents].px = p->GetMomentum()(1)/p->GetMomentum()(0);
+      vec[totEvents].py = p->GetMomentum()(2)/p->GetMomentum()(0);
+      vec[totEvents].pz = p->GetMomentum()(3)/p->GetMomentum()(0);
+      ++totEvents;}
       if ((time + decayTime) <= configOptions.cuts.Lifetime)
       {
         try
@@ -543,7 +543,7 @@ namespace CRADLE
       Particle *p = particleStack.back();
       vector<Particle *> finalStates;
       double decayTime = p->GetDecayTime();
-      // cout << "\n Decaying particle " << p->GetName() << endl;
+      //cout << "\n Decaying particle " << p->GetRawName() << endl;
       // std::cout << eventNr << "\t" << subEventNr << std::endl;
       // std::cout << "     Time =\t" << time      << "\n "
       //  << "CheckTime =\t" << checkTime << "\n "
@@ -579,6 +579,9 @@ namespace CRADLE
                              finalStates.end());
       }
     }
+    totEvents += totSubEvents;
+    subHeader << eventNr << std::setw(8) << subEventNr << "\t\t" << totSubEvents << "\n"
+                    << subEventData.str();
     eventData << eventNr << "\t\t" << totEvents << "\n"
               << subHeader.str();
 
@@ -648,7 +651,6 @@ namespace CRADLE
       tree.Branch("code", &pData.code);
       tree.Branch("energy", &pData.kinetic_energy);
       tree.Branch("excitation_energy", &pData.excitation_energy);
-      tree.Branch("p", &pData.p);
       tree.Branch("px", &pData.px);
       tree.Branch("py", &pData.py);
       tree.Branch("pz", &pData.pz);

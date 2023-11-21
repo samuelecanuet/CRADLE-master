@@ -19,7 +19,6 @@ struct ParticleData {
     double time;
     double excitation_energy;
     double kinetic_energy;
-    double p;
     double px;
     double py;
     double pz;
