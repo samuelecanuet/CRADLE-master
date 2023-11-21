@@ -47,8 +47,8 @@ class DecayManager {
     void RegisterSpectrumGenerator(const std::string, SpectrumGenerator&);
     void RegisterBasicSpectrumGenerators();
     void ListRegisteredParticles();
-    std::vector<ParticleData> GenerateEvent_ROOT(int);
-    std::string GenerateEvent_TXT(int);
+    std::vector<ParticleData> GenerateEvent_ROOT(int, int);
+    std::string GenerateEvent_TXT(int, int);
     Particle* GetNewParticle(const std::string, int Z=0, int A=0);
     DecayMode& GetDecayMode(const std::string);
     std::vector<std::vector<double> >* GetDistribution(const std::string);

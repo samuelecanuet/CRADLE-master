@@ -1,5 +1,6 @@
 [General]
 Verbosity=1
+Verbosity_file=1
 [Coupling]
 CS=%CS
 CSP=%CPS
